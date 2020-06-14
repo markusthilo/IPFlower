@@ -3,10 +3,11 @@
 
 # Network visualisation
 
+from lib.basicoutput import BasicOutput
 from lib.geolite2 import GeoLite2
 from datetime import datetime
 
-class NetVis:
+class NetVis(BasicOutput):
 	'Generate HTML with JavaScript for network visualisation of the statistic netflow data'
 
 	def __init__(self, stats, maxout=None):
@@ -15,8 +16,8 @@ class NetVis:
 		self.stats = stats
 		self.html = '''<html>
 	<head>
-		<meta charset="utf-8"><title>Netflower</title>
-		<link rel="icon" href="./pixmaps/icons/netflower.ico">
+		<meta charset="utf-8"><title>IPFlower</title>
+		<link rel="icon" href="./pixmaps/icons/ipflower.ico">
 		<style>
 			body {font-family: Sans-Serif; font-size: 0.8em}
 			p{font-family: sans-serif;} table{font-family: sans-serif}
@@ -37,6 +38,7 @@ class NetVis:
 				nodes = [];
 				edges = [];'''
 		self.stats.gen_nodes()
+		self.stats.limit_nodes(maxout)
 		if maxout != None and maxout < len(self.stats.nodes):
 			self.stats.nodes = self.stats.nodes[:maxout]
 		ids = set()
@@ -49,23 +51,22 @@ class NetVis:
 				nodes.push({'''
 			self.html += f'id: "{node["id"]}", label: "{node["id"]}", shape: "image", image: DIR + "{cc}.svg"'
 			try:
-				self.html += f', value: {node["value"]}'
+				self.html += f', value: {node[self.stats.total]}'
 			except AttributeError:
 				pass
 			self.html += f''',
 					title: "<table><tr><td colspan='3'>{node["id"]}</td></tr><tr><td colspan='3'>{geo_str}</td></tr>'''
 			for row in node:
-				if row != 'id' and row != 'value':
-					print(row, node[row])
-					if row == 'first_seen' or row == 'last_seen':
-						value = self.stats.humantime(node[row])
+				if row != 'id':
+					if row in self.stats.timestamps:
+						value = self.humantime(node[row])
 					else:	
 						value = node[row]
 					self.html += f'<tr><td>{row}</td><td> : </td><td>{value}</td></tr>'
 			self.html += '</table>"'
 			self.html += '});'
 		self.stats.gen_edges()
-		id_cnt = 0
+		id_cnt = 0	# for simple edge ids
 		for edge in self.stats.edges:
 			if edge['from'] in ids and edge['to'] in ids:
 				id_cnt += 1

@@ -30,7 +30,7 @@ if __name__ == '__main__':	# start here if called as application
 		help='Maximum number of IP addresses to visualize', metavar='INTEGER'
 	)
 	argparser.add_argument('-o', '--out', default='t',
-		help='Output Format, efault is tsv', metavar='SWITCH'
+		help='Output Format, default is tsv', metavar='SWITCH'
 	)
 	argparser.add_argument('-c', '--colnames', action='store_true',
 		help='Give headlines = column names on TSV output'

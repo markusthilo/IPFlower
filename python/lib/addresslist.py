@@ -7,7 +7,7 @@ class AddressList:
 	'Load IP addresses from a file - one address per line'
 
 	def __init__(self, listfiles):
-		'Give only IP addresses that are not in the blacklist file(s)'
+		'Load IPs into self.addresses'
 		self.addresses = []
 		if listfiles != None:	
 			for listfile in listfiles:

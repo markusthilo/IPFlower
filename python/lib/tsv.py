@@ -1,32 +1,33 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from lib.basicoutput import BasicOutput
 from lib.geolite2 import GeoLite2
 
-class TSVGenerator:
+class TSVGenerator(BasicOutput):
 	'Generator for tabstop-separated values'
 
 	def __init__(self, stats, colnames=False, maxout=None, reverse=False, unixtime=False):
 		'Generate object - colnames=True gives a headline, maxout=INTEGER limits output'
 		geo_db = GeoLite2()
-		stats.limitdata(maxout)
+		stats.limit_data(maxout)
 		if reverse:
 			stats.data.reverse()
 		self.data = []
 		for line in stats.data:
 			if not unixtime:
 				for ts in stats.timestamps:
-					line[ts] = stats.humantime(line[ts])
+					line[ts] = self.humantime(line[ts])
 			for addr in stats.addresses:
 				line[addr + '_geo' ] = geo_db.get_string(line[addr])
 			self.data.append(line)
 		self.colnames = colnames
 		if self.colnames:
-			if data == []:
+			if self.data == []:
 				self.headline = 'No data.'
 				return
 			else:
-				self.headline = '\t'.join(map(lambda tab: str(tab), data[0]))
+				self.headline = '\t'.join(map(lambda tab: str(tab), self.data[0].keys()))
 
 	def genlines(self):
 		'Generate one string per line'
