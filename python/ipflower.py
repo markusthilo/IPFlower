@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 __author__ = 'Markus Thilo'
-__version__ = '0.7-20200530'
+__version__ = '0.8-20201015'
 __license__ = 'GPL-3'
 
 from lib.zeekstats import CalcZeek
+from lib.iprunner import IPRunner
 from lib.tsv import TSVGenerator
 from lib.netvis import NetVis
 from argparse import ArgumentParser, FileType
@@ -19,8 +20,8 @@ if __name__ == '__main__':	# start here if called as application
 	argparser.add_argument('-i', '--in', dest='filetype', default='z',
 		help='Type of input file(s), default is zeek', metavar='SWITCH'
 	)
-	argparser.add_argument('-t', '--target', dest='target',
-		help='Target IP address', metavar='IP_ADDRESS',
+	argparser.add_argument('-g', '--grep', dest='grep',
+		help='Target IP address', metavar='IP_ADDRESS/LINK',
 		type=lambda addr: ip_address(addr)
 	)
 	argparser.add_argument('-b', '--blacklist', nargs=1, type=FileType('rt'),
@@ -51,7 +52,13 @@ if __name__ == '__main__':	# start here if called as application
 	if args.filetype.lower() in ('z', 'zeek', 'zeek-log'):
 		stats = CalcZeek(
 			args.infiles,
-			target=args.target,
+			grep=args.grep,
+			blacklist=args.blacklist
+		)
+	elif args.filetype.lower() in ('p', 'iprunner', 'pcap'):
+		stats = IPRunner(
+			args.infiles,
+			grep=args.grep,
 			blacklist=args.blacklist
 		)
 	else:
