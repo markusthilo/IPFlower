@@ -10,7 +10,6 @@ from lib.iprunner import IPRunner
 from lib.tsv import TSVGenerator
 from lib.netvis import NetVis
 from argparse import ArgumentParser, FileType
-from ipaddress import ip_address
 from sys import stdout as StdOut
 from sys import stderr as StdErr
 from sys import exit as SysExit
@@ -22,7 +21,7 @@ if __name__ == '__main__':	# start here if called as application
 	)
 	argparser.add_argument('-g', '--grep', dest='grep',
 		help='Target IP address', metavar='IP_ADDRESS/LINK',
-		type=lambda addr: ip_address(addr)
+		type=str
 	)
 	argparser.add_argument('-b', '--blacklist', nargs=1, type=FileType('rt'),
 		help='File with blacklisted IP addresses', metavar='FILE'
@@ -55,7 +54,7 @@ if __name__ == '__main__':	# start here if called as application
 			grep=args.grep,
 			blacklist=args.blacklist
 		)
-	elif args.filetype.lower() in ('p', 'iprunner', 'pcap'):
+	elif args.filetype.lower() in ('i', 'iprunner', 'ip'):
 		stats = IPRunner(
 			args.infiles,
 			grep=args.grep,

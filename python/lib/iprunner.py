@@ -7,7 +7,7 @@ from lib.grep import Grep
 from ipaddress import ip_address
 from operator import itemgetter
 
-class CalcZeek(BasicStats):
+class IPRunner(BasicStats):
 	'Visualize netflow data'
 
 	IPRUNNER = './iprunner'

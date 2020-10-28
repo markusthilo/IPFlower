@@ -18,31 +18,33 @@ class CalcZeek(BasicStats):
 		self.addresses = 'id.orig_h', 'id.resp_h'
 		self.weights = 'orig_bytes', 'resp_bytes'
 		self.total = 'total_bytes'
-		log = ZeekCut(infiles, columns=[	# use zeek-cut
+		zeekcut = ZeekCut()
+		zeekcut.run(infiles,
+			columns=[	# use zeek-cut
 			'ts',
 			'id.orig_h', 'id.orig_p',
 			'id.resp_h', 'id.resp_p',
 			'orig_bytes', 'resp_bytes'
 		])
-		log.convert(force={
+		zeekcut.convert(force={
 			'ts': float,
 			'id.orig_h': ip_address, 'id.orig_p': int,
 			'id.resp_h': ip_address,'id.resp_p': int,
 			'orig_bytes': int, 'resp_bytes': int
 		})
-		grepper = Grep(grep)
-		filtered = grepper.grep(log.data)
+		grepper = Grep(grep)	# grep for address, link (or no filter)
 		blacklistfilter = BlackList(blacklist)	# filter out blacklisted addresses
-		filtered = blacklistfilter.filter(self.addresses, filtered)
-		self.data = dict()	# distionary to store the statistical data
-		if target == None:	# go for all data flows
+		self.data = blacklistfilter.filter(self.addresses, grepper.grep(zeekcut.data))
+
+		if grepper.addresses == []:	# go for all data flows
 			self.target = None
 			self.differential = None
-			for line in filtered:
+			for line in self.data:
 				self.update(line['id.orig_h'].compressed + '-' + line['id.resp_h'].compressed, line)
+			print(self.data)
 		else:
 			if isinstance(target, str):
-				self.target = ip_address(target)
+				self.target = ip_address(grepper.addresses[0])
 			else:
 				self.target = target
 			self.differential = 'id.resp_p'
@@ -54,7 +56,9 @@ class CalcZeek(BasicStats):
 				else:
 					continue
 				self.update(key, line)
+
 		self.data = list(self.data.values())
+
 		for line in self.data:
 			line['total_bytes'] = line['orig_bytes'] + line['resp_bytes']
 		self.data.sort(key=itemgetter('total_bytes'), reverse=True)
