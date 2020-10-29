@@ -1,26 +1,43 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from operator import itemgetter
+from lib.grep import Grep
+from lib.blacklist import BlackList
+from ipaddress import ip_address
 
 class BasicStats:
 	'Base for statistics'
 
-	def update(self, key, line):
-		'Check and update timestamps and weights'
-		if key in self.data:	# update
-			if line[self.timestamp] < self.data[key][self.timestamps[0]]:	# update 1st seen
-				self.data[key][self.timestamps[0]] = line[self.timestamp]
-			elif line[self.timestamp] > self.data[key][self.timestamps[1]]:	# update last seen
-				self.data[key][self.timestamps[1]] = line[self.timestamp]
-			for weight in self.weights:	# update weigths = add
-				self.data[key][weight] += line[weight]
-			return
-		self.data[key] = { addr: line[addr] for addr in self.addresses }	# generate data set
-		if self.differential != None:	# if target is given, generate port
-			self.data[key].update({self.differential: line[self.differential]})
-		self.data[key].update({ ts: line[self.timestamp] for ts in self.timestamps })	# generate timestamps
-		self.data[key].update({ weight: line[weight] for weight in self.weights })
+	def readtsv(self, infiles):
+		'Read data from TSV file'
+		return [[self.decode(value) for value in line.split('\t')] for infile in infiles for line in infile]
+
+	def decode(self, string):
+		'Decode string to fitting formats'
+		string = string.strip('\n')
+		string = string.strip('\t')
+		for form in int, float, ip_address:
+			try:
+				return form(string)
+			except ValueError:
+				pass
+		return string
+
+	def gendict(self, array, columns):
+		'Generate dictionary from list of lists'
+		self.data = [{colname: colvalue for colname, colvalue in zip(columns, line)} for line in array]
+
+	def str2zero(self, value):
+		'Normalize - or another string to integer 0'
+		if isinstance(value, str):
+			return 0
+		return value
+
+	def filter(self, grep, blacklist):
+		'Apply grep and blacklist filter'
+		grepper = Grep(grep)	# grep for address, link or no filter
+		blacklist = BlackList(blacklist)	# filter out blacklisted addresses
+		self.data = blacklist.filter(self.addresses, grepper.grep(self.data))
 
 	def limit_data(self, maxdata):
 		'Limit number of data sets'
