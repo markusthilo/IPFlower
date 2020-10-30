@@ -56,15 +56,10 @@ class NetVis(BasicOutput):
 				pass
 			self.html += f''',
 					title: "<table><tr><td colspan='3'>{node["id"]}</td></tr><tr><td colspan='3'>{geo_str}</td></tr>'''
-			for row in node:
-				if row != 'id':
-					if row in self.stats.timestamps:
-						value = self.humantime(node[row])
-					else:	
-						value = node[row]
+			for row, value in node.items():
+					value = self.humanreadable(row, value)
 					self.html += f'<tr><td>{row}</td><td> : </td><td>{value}</td></tr>'
-			self.html += '</table>"'
-			self.html += '});'
+			self.html += '</table>"});'
 		self.stats.gen_edges()
 		id_cnt = 0	# for simple edge ids
 		for edge in self.stats.edges:
@@ -73,12 +68,17 @@ class NetVis(BasicOutput):
 				self.html += '''
 				edges.push({'''
 				self.html += f'id: "{id_cnt}"'
-				self.html += f', from: "{edge["from"]}", to: "{edge["to"]}"'
-				try:
-					self.html += f', label: "{edge["label"]}"'
-				except KeyError:
-					pass
-				self.html += f', value: {edge["value"]}'
+				self.html += f', from: "{edge["from"]}", to: "{edge["to"]}", value: {edge["value"]}'
+				edge.pop('from')
+				edge.pop('to')
+				edge.pop('value')
+				if len(edge) > 0:
+					self.html += f''',
+						title: "<table>'''
+					for row, value in edge.items():
+						value = self.humanreadable(row, value)
+						self.html += f'<tr><td>{row}</td><td>:</td><td>{value}</td></tr>'
+					self.html += '</table>"'
 				try:
 					if self.stats.arrows:
 						self.html += ', arrows: "to"'
@@ -91,7 +91,15 @@ class NetVis(BasicOutput):
 					nodes: nodes,
 					edges: edges
 				};
-				var options = {};
+				var options = {
+					"physics": {
+						"enabled": false,
+						"hierarchicalRepulsion": {
+						"centralGravity": 0,
+						"avoidOverlap": null
+						}
+					}
+				};
 				network = new vis.Network(container, data, options);
 			}
 		</script>

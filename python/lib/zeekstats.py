@@ -13,6 +13,7 @@ class CalcZeek(BasicStats):
 		'Read data from Zeek logfiles and calculate statistics'
 		self.addresses = 'id.orig_h', 'id.resp_h'
 		self.timestamps = 'first_ts', 'last_ts'
+		self.bytes = 'orig_bytes', 'resp_bytes'
 		self.grep = grep
 		if grep == None:
 			self.columns = 'id.orig_h', 'id.resp_h', 'ts', 'orig_bytes', 'resp_bytes'
@@ -79,23 +80,13 @@ class CalcZeek(BasicStats):
 	def gen_edges(self):
 		'Generate edges to display'
 		self.arrows = True
-		if self.grep == None:
-			self.edges = [
-				{
-					'from': line['id.orig_h'].compressed,
-					'to': line['id.resp_h'].compressed,
-					'value': line['total_bytes'],
-				}
-				for line in self.data
-			]
-		else:
-			self.edges = [
-				{
-					'from': line['id.orig_h'].compressed,
-					'to': line['id.resp_h'].compressed,
-					'label': str(line['id.resp_p']),
-					'value': line['total_bytes'],
-				}
-				for line in self.data
-			]
-			
+		self.edges = []
+		for line in self.data:
+			edge = {
+				'from': line['id.orig_h'].compressed,
+				'to': line['id.resp_h'].compressed,
+				'value': line['total_bytes'],
+			}
+			if self.grep != None:
+				edge['title'] = f'id.resp_p: {line["id.resp_p"]}',
+			self.edges.append(edge)			
