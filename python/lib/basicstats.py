@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from lib.tsv import TSVReader
+from lib.basicinout import CSVReader
 from lib.grep import Grep
 from lib.blacklist import BlackList
 from ipaddress import ip_address
@@ -9,22 +9,6 @@ from lib.geolite2 import GeoLite2
 
 class BasicStats:
 	'Base for statistics'
-
-	def decode(self, string):
-		'Decode string to fitting formats'
-		string = string.strip('\n')
-		string = string.strip('\t')
-		for form in int, float, ip_address:
-			try:
-				return form(string)
-			except ValueError:
-				pass
-		return string
-
-	def readtsv(self, infiles, columns=None):
-		'Import data from TSV file'
-		tsv = TSVReader(infiles, columns=columns, decoder=self.decode)
-		self.data = tsv.array
 
 	def str2zero(self, value):
 		'Normalize - or another string to integer 0'

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from lib.geolite2 import GeoLite2
 from datetime import datetime
 from csv import reader, writer
+from ipaddress import ip_address
 
 class BasicOutput:
 	'Base for output classes'
@@ -39,6 +41,7 @@ class CSVGenerator(BasicOutput):
 		reverse = False,
 		unixtime = False):
 		'Generate object - colnames=True gives a headline, maxout=INTEGER limits output'
+#		print(stats.data)
 		geo_db = GeoLite2()
 		stats.limit_data(maxout)
 		if reverse:
@@ -51,7 +54,7 @@ class CSVGenerator(BasicOutput):
 
 			self.data.append(line)
 			
-						if not unixtime:
+			if not unixtime:
 				for ts in self.timestamps:
 					line[ts] = self.humantime(line[ts])
 		self.colnames = colnames
@@ -70,35 +73,43 @@ class CSVGenerator(BasicOutput):
 class CSVReader:
 	'Read CSV files'
 
-	def __init__(self, infiles, delimiter='\t' ,columns=None, decoder=None):
-		'Read data from TSV file'
-		self.array = []
+	def readcsv(self, infiles, delimiter='\t', dialect = 'excel', columns=None):
+		'Read data from CSV file'
+		self.data = []
 		self.columns = None
 		for infile in infiles:
-			csvreader = reader(infile, delimiter=delimiter)
-			csvlist =[ line for line in csvreader ]
-
-			print(csvlist)
-
+			csvreader = reader(infile, delimiter=delimiter, dialect = dialect)
+			csvlist = [ line for line in csvreader ]
 			if columns == None:
 				if self.columns == None:
 					self.columns = csvlist[0]
 				elif self.columns != csvlist[0]:
 					raise RuntimeError('Inconsistent input files.')
-					
-			self.columns = self.__readline__[0][0]
-			for infile in infiles:
-				thiscols = self.__readline__(infile[0])
+				for line in csvlist[1:]:
+					print(line, self.__genline__(self.columns, line))
+					self.data.append(self.__genline__(self.columns, line))
+			else:
+				for line in csvlist:
+					self.data.append(self.__genline__(columns, line))
+		if columns != None:
+			self.columns = columns
 
-				for line in infile:
-					self.array.append(self.__readline__(line, decoder=decoder))
-		else:
-			self.array = [self.readline(line, decoder=decoder) for line in infile]
-		self.dict = [{colname: colvalue for colname, colvalue in zip(self.columns, line)} for line in array]
+	def __decode__(self, string):
+		'Decode string'
+		for form in int, float, ip_address:
+			try:
+				return form(string) 
+			except ValueError:
+				pass
+		return string
 
-	def __readline__(self, line, decoder=None):
-		'Read one line from file'
-		if decoder == None:
-			return [col for col in line.split('\t')]
-		else:
-			return [decoder(col) for col in line.split('\t')]
+	def __genline__(self, columns, values):
+		'Generate dict from one line'
+		
+		for col, value in zip(columns, values):
+			print(col, value, type(value))
+		
+		
+		
+		return { col: self.__decode__(value) for col, value in zip(columns, values) }
+

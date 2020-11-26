@@ -2,45 +2,61 @@
 # -*- coding: utf-8 -*-
 
 from lib.basicstats import BasicStats
+from lib.basicinout import CSVReader
 from lib.blacklist import BlackList
 from lib.grep import Grep
 from ipaddress import ip_address
 
-class IPRunner(BasicStats):
+class IPRunner(BasicStats, CSVReader):
 	'Visualize netflow data'
-
-	COLUMNS = {
-		'g': ('SRC_ADDR', 'SRC_PORT', 'DST_ADDR', 'DST_PORT', 'PROTOCOL', 'FIRST_TS', 'LAST_TS', 'PACKETS', 'VOLUME'),
-		's': ('ADDR', 'FIRST_TS', 'LAST_TS', 'PACKETS_IN', 'PACKETS_OUT', 'VOLUME_IN', 'VOLUME_OUT'),
-		'n': ('SRC_ADDR', 'DST_ADDR', 'PROTOCOL', 'FIRST_TS', 'LAST_TS', 'PACKETS', 'VOLUME')
-	}
 
 	def __init__(self, infiles, grep=None, blacklist=None):
 		'Use iprunner to calculate statistics'
-		array = self.readcsv(infiles)
-		print(array)
-		
-		return
-				
-		self.grep = grep
-		self.addresses = 'SRC_ADDR', 'DST_ADDR'
+		self.readcsv(infiles)
+		self.datatype = self.__type__(self.columns)
+		if self.datatype == 'shorter':
+			self.addresses = 'ADDR'
+		else:
+			self.addresses = 'SRC_ADDR', 'DST_ADDR'
 		self.timestamps = 'FIRST_TS', 'LAST_TS'
+		self.grep = grep
 
-
-
-
-		if len(array[0]) == 9:
-			self.datatype = 'g'
-			self.bytes = 'VOLUME'
-		elif len(array[0]) == 7:
-			if isinstance(array[0][1], float):
-				self.datatype = 's'
-				self.bytes = 'VOLUME_IN', 'VOLUME_OUT'
-			else:
-				self.datatype = 'n'
-				self.bytes = 'VOLUME'
-		self.gendict(array, self.COLUMNS[self.datatype])
-		self.filter(grep, blacklist)
+	def __type__(self, columns):
+		'Detect data type'
+		for datatype, coldefs in (
+			('grep', [
+				'SRC_ADDR',
+				'SRC_PORT',
+				'DST_ADDR',
+				'DST_PORT',
+				'PROTOCOL',
+				'FIRST_TS',
+				'LAST_TS',
+				'PACKETS',
+				'VOLUME'
+			]),
+			('shorter', [
+				'ADDR',
+				'FIRST_TS',
+				'LAST_TS',
+				'PACKETS_IN',
+				'PACKETS_OUT',
+				'VOLUME_IN',
+				'VOLUME_OUT'
+			]),
+			('basic', [
+				'SRC_ADDR',
+				'DST_ADDR',
+				'PROTOCOL',
+				'FIRST_TS',
+				'LAST_TS',
+				'PACKETS',
+				'VOLUME'
+			])
+		):
+			if columns == coldefs:
+				return datatype
+		raise RuntimeError('Unexpected input file.')
 
 	def gen_nodes(self, maxnodes=None):
 		'Generate nodes to display'

@@ -3,7 +3,7 @@
 
 # Network visualisation
 
-from lib.basicoutput import BasicOutput
+from lib.basicinout import BasicOutput
 from lib.geolite2 import GeoLite2
 from datetime import datetime
 

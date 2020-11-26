@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 __author__ = 'Markus Thilo'
-__version__ = '0.8-20201015'
+__version__ = '0.8-20201126'
 __license__ = 'GPL-3'
 
 from lib.zeekstats import CalcZeek
 from lib.iprunner import IPRunner
-from lib.tsv import TSVGenerator
+from lib.basicinout import CSVGenerator
 from lib.netvis import NetVis
 from argparse import ArgumentParser, FileType
 from sys import stdout as StdOut
@@ -64,7 +64,7 @@ if __name__ == '__main__':	# start here if called as application
 		print('Error: Unknown input file type.', file=StdErr)
 		SysExit(1)
 	if args.out.lower() in ('t', 'tsv'):
-		tsv = TSVGenerator(
+		tsv = CSVGenerator(
 			stats,
 			colnames=args.colnames,
 			maxout=args.max,
