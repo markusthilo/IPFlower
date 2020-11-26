@@ -23,7 +23,7 @@ class GeoLite2:
 			self.country = None
 
 	def get(self, addr):
-		'Get inos to given IP address'
+		'Get infos to given IP address'
 		if isinstance(addr, str):
 			addr = ip_address(addr)
 		data = dict()

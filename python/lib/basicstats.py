@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from lib.tsv import TSVReader
 from lib.grep import Grep
 from lib.blacklist import BlackList
 from ipaddress import ip_address
+from lib.geolite2 import GeoLite2
 
 class BasicStats:
 	'Base for statistics'
-
-	def readtsv(self, infiles):
-		'Read data from TSV file'
-		return [[self.decode(value) for value in line.split('\t')] for infile in infiles for line in infile]
 
 	def decode(self, string):
 		'Decode string to fitting formats'
@@ -23,9 +21,10 @@ class BasicStats:
 				pass
 		return string
 
-	def gendict(self, array, columns):
-		'Generate dictionary from list of lists'
-		self.data = [{colname: colvalue for colname, colvalue in zip(columns, line)} for line in array]
+	def readtsv(self, infiles, columns=None):
+		'Import data from TSV file'
+		tsv = TSVReader(infiles, columns=columns, decoder=self.decode)
+		self.data = tsv.array
 
 	def str2zero(self, value):
 		'Normalize - or another string to integer 0'
@@ -38,6 +37,13 @@ class BasicStats:
 		grepper = Grep(grep)	# grep for address, link or no filter
 		blacklist = BlackList(blacklist)	# filter out blacklisted addresses
 		self.data = blacklist.filter(self.addresses, grepper.grep(self.data))
+
+	def addgeo(self, extension='_geo'):
+		'Add geo infos'
+		geo_db = GeoLite2()
+		for line in self.data:
+			for addr in stats.addresses:
+				line[addr + extension ] = geo_db.get_string(line[addr])
 
 	def limit_data(self, maxdata):
 		'Limit number of data sets'

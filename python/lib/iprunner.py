@@ -17,10 +17,18 @@ class IPRunner(BasicStats):
 
 	def __init__(self, infiles, grep=None, blacklist=None):
 		'Use iprunner to calculate statistics'
+		array = self.readcsv(infiles)
+		print(array)
+		
+		return
+				
 		self.grep = grep
 		self.addresses = 'SRC_ADDR', 'DST_ADDR'
 		self.timestamps = 'FIRST_TS', 'LAST_TS'
-		array = self.readtsv(infiles)
+
+
+
+
 		if len(array[0]) == 9:
 			self.datatype = 'g'
 			self.bytes = 'VOLUME'
