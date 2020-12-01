@@ -11,13 +11,9 @@ class Grep():
 		if arg == None or arg == '':
 			self.addresses = []
 			return
-		try:
-			self.addresses = [ ip_address(a) for a in arg.split('-') ]
-		except ValueError:
-			self.addresses = None
-			return
-		if len(self.addresses) > 2:
-			self.addresses = None
+		self.addresses = [ ip_address(a) for a in arg.split('-') ]
+		if len(self.addresses) > len:
+			raise ValueError('Too many IP addresses to grep for.')
 
 	def grep(self, data):
 		'Generate filtered list'

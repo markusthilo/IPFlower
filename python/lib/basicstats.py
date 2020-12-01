@@ -16,18 +16,19 @@ class BasicStats:
 			return 0
 		return value
 
-	def filter(self, grep, blacklist):
-		'Apply grep and blacklist filter'
-		grepper = Grep(grep)	# grep for address, link or no filter
-		blacklist = BlackList(blacklist)	# filter out blacklisted addresses
-		self.data = blacklist.filter(self.addresses, grepper.grep(self.data))
+	def blacklist(self, blacklist):
+		'Blacklist filter'
+		if blacklist != None:
+			bl = BlackList(blacklist)
+			self.data = bl.filter(self.addresses, grepper.grep(self.data))
 
-	def addgeo(self, extension='_geo'):
-		'Add geo infos'
-		geo_db = GeoLite2()
-		for line in self.data:
-			for addr in stats.addresses:
-				line[addr + extension ] = geo_db.get_string(line[addr])
+	def grep(self, grep):
+		'Grep fiter'
+		if grep != None:
+			if len(grep.addresses) > len(self.addresses):
+				raise RuntimeError('Too many IP addresses to filter for.')
+			grepper = Grep(grep)
+			self.data = grepper.grep(self.data)
 
 	def reverse(self):
 		'Reverse lines - should give from small to large traffic'
@@ -42,4 +43,19 @@ class BasicStats:
 		'Linit number of nodes'
 		if maxnodes != None and maxnodes < len(self.nodes):
 			self.nodes = self.nodes[:maxnodes]
-			self.node_addresses = { node['id'] for node in self.nodes }
+
+	def addgeo(self, extension='_geo'):
+		'Add geo infos'
+		geo_db = GeoLite2()
+		for line in self.data:
+			for addr in self.addresses:
+				line[addr + extension ] = geo_db.get_string(line[addr])
+
+	def addgeo2nodes(self):
+		'Get country code in lower characters'
+		geo_db = GeoLite2()
+		for node in self.nodes:
+			geo = geo_db.get(node['addr'])
+			node['cc'] = geo['cc'].lower()
+			node['geo'] = geo_db.gen_string(geo)
+			

@@ -43,8 +43,7 @@ class CSVGenerator(BasicOutput):
 		self.headline = headline
 		self.dialect = dialect
 		self.delimiter = delimiter
-		if maxout != None:
-			self.stats.limit(maxout)
+		self.stats.limit(maxout)
 		if reverse:
 			self.stats.reverse()
 		if not unixtime:
@@ -78,7 +77,6 @@ class CSVReader:
 				elif self.columns != csvlist[0]:
 					raise RuntimeError('Inconsistent input files.')
 				for line in csvlist[1:]:
-					print(line, self.__genline__(self.columns, line))
 					self.data.append(self.__genline__(self.columns, line))
 			else:
 				for line in csvlist:
@@ -97,11 +95,5 @@ class CSVReader:
 
 	def __genline__(self, columns, values):
 		'Generate dict from one line'
-		
-		for col, value in zip(columns, values):
-			print(col, value, type(value))
-		
-		
-		
 		return { col: self.__decode__(value) for col, value in zip(columns, values) }
 

@@ -73,7 +73,7 @@ if __name__ == '__main__':	# start here if called as application
 		)
 		csv.write(args.outfile)
 	elif args.out.lower() in ('n', 'nv', 'netvis'):
-		netvis = NetVis(stats, maxout=args.max)
+		netvis = NetVis(stats, maxnodes=args.max)
 		netvis.write(args.outfile)
 	else:
 		print(stats.data)	# debug!!!!!!!

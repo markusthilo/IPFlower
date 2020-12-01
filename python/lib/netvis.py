@@ -4,16 +4,12 @@
 # Network visualisation
 
 from lib.basicinout import BasicOutput
-from lib.geolite2 import GeoLite2
-from datetime import datetime
 
-class NetVis(BasicOutput):
-	'Generate HTML with JavaScript for network visualisation of the statistic netflow data'
+class NetVis:
+	'Generate html with JavaScript for network visualisation of the statistic netflow data'
 
-	def __init__(self, stats, maxout=None):
-		'Visualisation using Vis.js'
-		self.geo_db = GeoLite2()
-		self.stats = stats
+	def __init__(self, stats, maxnodes=1000):
+		'Base for isualisation using Vis.js'
 		self.html = '''<html>
 	<head>
 		<meta charset="utf-8"><title>IPFlower</title>
@@ -37,54 +33,43 @@ class NetVis(BasicOutput):
 			function draw() {
 				nodes = [];
 				edges = [];'''
-		self.stats.gen_nodes()
-		self.stats.limit_nodes(maxout)
-		if maxout != None and maxout < len(self.stats.nodes):
-			self.stats.nodes = self.stats.nodes[:maxout]
-		ids = set()
-		for node in self.stats.nodes:
-			ids.add(node['id'])
-			geo = self.geo_db.get(node['id'])
-			cc = geo['cc'].lower()
-			geo_str = self.geo_db.gen_string(geo)
+		for node in stats.gen_nodes(maxnodes):
 			self.html += '''
 				nodes.push({'''
-			self.html += f'id: "{node["id"]}", label: "{node["id"]}", shape: "image", image: DIR + "{cc}.svg"'
+			self.html += f'id: "{node["addr"]}", label: "{node["addr"]}", shape: "image", image: DIR + "{node["cc"]}.svg"'
 			try:
-				self.html += f', value: {node[self.stats.total]}'
+				self.html += f', value: {node["value"]}'
 			except AttributeError:
 				pass
 			self.html += f''',
-					title: "<table><tr><td colspan='3'>{node["id"]}</td></tr><tr><td colspan='3'>{geo_str}</td></tr>'''
-			for row, value in node.items():
-					value = self.humanreadable(row, value)
-					self.html += f'<tr><td>{row}</td><td> : </td><td>{value}</td></tr>'
+					title: "<table><tr><td colspan='3'>{node["addr"]}</td></tr><tr><td colspan='3'>{node["geo"]}</td></tr>'''
+			try:
+				for key, value in node['title'].items():
+					self.html += f'<tr><td>{key}</td><td> : </td><td>{self.humanreadble(value)}</td></tr>'
+			except AttributeError:
+				pass
 			self.html += '</table>"});'
-		self.stats.gen_edges()
-		id_cnt = 0	# for simple edge ids
-		for edge in self.stats.edges:
-			if edge['from'] in ids and edge['to'] in ids:
-				id_cnt += 1
-				self.html += '''
+		for edge in stats.gen_edges():
+			self.html += '''
 				edges.push({'''
-				self.html += f'id: "{id_cnt}"'
-				self.html += f', from: "{edge["from"]}", to: "{edge["to"]}", value: {edge["value"]}'
-				edge.pop('from')
-				edge.pop('to')
-				edge.pop('value')
-				if len(edge) > 0:
-					self.html += f''',
-						title: "<table>'''
-					for row, value in edge.items():
-						value = self.humanreadable(row, value)
-						self.html += f'<tr><td>{row}</td><td>:</td><td>{value}</td></tr>'
-					self.html += '</table>"'
-				try:
-					if self.stats.arrows:
-						self.html += ', arrows: "to"'
-				except AttributeError:
-					pass
-				self.html += '});'
+			self.html += f'id: "{edge["id"]}", from: "{edge["from"]}", to: "{edge["to"]}"'
+			try:
+				self.html += f', value: {edge["value"]}'
+			except AttributeError:
+				pass
+			try:
+				self.html += f', arrows: "{edge["arrows"]}"'
+			except AttributeError:
+				pass
+			try:
+				self.html += ''',
+					title: "<table>'''
+				for key, value in edge['title'].items():
+					self.html += f'<tr><td>{key}</td><td>:</td><td>{value}</td></tr>'
+				self.html += '</table>"'
+			except AttributeError:
+				pass
+			self.html += '});'
 		self.html += '''
 				var container = document.getElementById('netvis');
 				var data = {
@@ -109,6 +94,6 @@ class NetVis(BasicOutput):
 	</body>
 </html>'''
 
-	def write(self, out):
-		'Write to file or stdout'
-		print(self.html, file=out)
+	def write(self, outfile):
+		'Write html'
+		print(self.html, file=outfile)

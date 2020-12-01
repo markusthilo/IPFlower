@@ -14,16 +14,18 @@ class CalcZeek(BasicStats):
 		self.addresses = 'id.orig_h', 'id.resp_h'
 		self.timestamps = 'first_ts', 'last_ts'
 		self.bytes = 'orig_bytes', 'resp_bytes'
-		self.grep = grep
 		if grep == None:
 			self.columns = 'id.orig_h', 'id.resp_h', 'ts', 'orig_bytes', 'resp_bytes'
+			self.type = 'basic'
 		else:
 			self.columns = 'id.orig_h', 'id.resp_h', 'id.resp_p', 'ts', 'orig_bytes', 'resp_bytes'
+			self.type = 'grep'
 		zeekcut = ZeekCut()
 		zeekcut.run(infiles, columns=self.columns)	# use zeek-cut
 		zeekcut.convert()	# convert strings to fitting types
 		self.data = zeekcut.data
-		self.filter(grep, blacklist)	# filter by grep argument and blacklist
+		self.grep(grep)	# filter data
+		self.blacklist(blacklist)
 		newdata = []
 		for line in self.data:
 			orig_bytes = self.str2zero(line['orig_bytes'])
@@ -55,14 +57,15 @@ class CalcZeek(BasicStats):
 		for line in self.data:
 			line['total_bytes'] = line['orig_bytes'] + line['resp_bytes']
 		self.data.sort(key=itemgetter('total_bytes'), reverse=True)
+		self.addgeo()
 
 	def gen_nodes(self, maxnodes=None):
 		'Generate nodes to display'
+		self.addresses = { line['id.orig_h'] for line in self.data }	# all ip adressses, orig and resp
+		self.addresses.update({ line['id.resp_h'] for line in self.data })
 		self.nodes = []
-		self.node_addresses = { line['id.orig_h'] for line in self.data }	# all ip adressses, orig and resp
-		self.node_addresses.update({ line['id.resp_h'] for line in self.data })
-		for addr in self.node_addresses:
-			node = {'id': addr.compressed}
+		for addr in self.addresses:	#	generate list of nodes
+			node = {'addr': addr.compressed}
 			first_ts = None
 			last_ts = None
 			total_bytes = 0
@@ -76,17 +79,44 @@ class CalcZeek(BasicStats):
 			node.update({'first_ts': first_ts, 'last_ts': last_ts, 'total_bytes': total_bytes})
 			self.nodes.append(node)
 		self.nodes.sort(key=itemgetter('total_bytes'), reverse=True)
+		self.limit_nodes(maxnodes)
+		self.addgeo2nodes()
+		self.addresses = set()
+		for node in self.nodes:
+			self.addresses.add(node['addr'])
+			node['value'] = node['total_bytes']
+			node['title'] = {
+				'first_ts': node['first_ts'],
+				'last_ts': node['last_ts'],
+				'total_bytes': node['total_bytes']
+			}
+			yield node
 
 	def gen_edges(self):
 		'Generate edges to display'
-		self.arrows = True
-		self.edges = []
+		id_cnt = 0	# for simple edge ids
 		for line in self.data:
-			edge = {
-				'from': line['id.orig_h'].compressed,
-				'to': line['id.resp_h'].compressed,
-				'value': line['total_bytes'],
+			edge = {'from': line['id.orig_h'].compressed, 'to': line['id.resp_h'].compressed}
+			if not edge['from'] in self.addresses or not edge['to'] in self.addresses:
+				continue
+			id_cnt += 1
+			edge['id'] = id_cnt
+			edge['value'] = line['total_bytes']
+			edge['arrows'] = 'to'
+			edge['title'] = {
+				'first_ts': line['first_ts'],
+				'last_ts': line['last_ts'],
+				'orig_bytes': line['orig_bytes'],
+				'resp_bytes': line['resp_bytes'],
+				'total_bytes': line['total_bytes']
 			}
-			if self.grep != None:
-				edge['title'] = f'id.resp_p: {line["id.resp_p"]}',
-			self.edges.append(edge)			
+			yield edge
+
+
+#			if self.type == 'grep':
+#				edge['title'] = f'id.resp_p: {line["id.resp_p"]}',
+#			self.edges.append(edge)			
+
+
+
+
