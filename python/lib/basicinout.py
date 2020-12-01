@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from lib.geolite2 import GeoLite2
 from datetime import datetime
 from csv import reader, writer
 from ipaddress import ip_address
@@ -34,41 +33,34 @@ class CSVGenerator(BasicOutput):
 	'Generator for tabstop-separated values'
 
 	def __init__(self, stats,
-		colnames = False,
+		headline = False,
 		dialect = 'excel',
 		delimiter = '\t',
 		maxout = None,
 		reverse = False,
 		unixtime = False):
-		'Generate object - colnames=True gives a headline, maxout=INTEGER limits output'
-#		print(stats.data)
-		geo_db = GeoLite2()
-		stats.limit_data(maxout)
+		self.stats = stats
+		self.headline = headline
+		self.dialect = dialect
+		self.delimiter = delimiter
+		if maxout != None:
+			self.stats.limit(maxout)
 		if reverse:
-			stats.data.reverse()
-		self.data = []
+			self.stats.reverse()
 		if not unixtime:
-			for line in stats.data:
-				for ts in stats.timestamps:
-					line[ts] = self.humantime(line[ts])
-
-			self.data.append(line)
-			
-			if not unixtime:
-				for ts in self.timestamps:
-					line[ts] = self.humantime(line[ts])
-		self.colnames = colnames
-		if self.colnames:
-			if self.data == []:
-				self.headline = 'No data.'
-				return
-			else:
-				self.headline = '\t'.join(map(lambda tab: str(tab), self.data[0].keys()))
+			for i in range(len(self.stats.data)):
+				for ts in self.stats.timestamps:
+					self.stats.data[i][ts] = self.humantime(self.stats.data[i][ts])
 
 	def write(self, outfile):
 		'Write to file or stdout'
-		for line in self.genlines():
-			print(line, file=out)
+		csvwriter = writer(outfile, dialect=self.dialect, delimiter=self.delimiter)
+		if len(self.stats.data) > 0:
+			csvwriter.writerow(self.stats.data[0].keys())
+			for line in self.stats.data:
+				csvwriter.writerow(line.values())
+		else:
+			csvwriter.writerow(['No data'])
 
 class CSVReader:
 	'Read CSV files'

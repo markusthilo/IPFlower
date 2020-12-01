@@ -29,6 +29,10 @@ class BasicStats:
 			for addr in stats.addresses:
 				line[addr + extension ] = geo_db.get_string(line[addr])
 
+	def reverse(self):
+		'Reverse lines - should give from small to large traffic'
+		self.data = reversed(self.data)
+
 	def limit_data(self, maxdata):
 		'Limit number of data sets'
 		if maxdata != None and maxdata < len(self.data):
