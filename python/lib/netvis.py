@@ -5,11 +5,19 @@
 
 from lib.basicinout import BasicOutput
 
-class NetVis:
+class NetVis(BasicOutput):
 	'Generate html with JavaScript for network visualisation of the statistic netflow data'
 
 	def __init__(self, stats, maxnodes=1000):
 		'Base for isualisation using Vis.js'
+		self.stats = stats
+		if len(self.stats.data) == 0:
+			self.html = '''<html>
+	<body>
+		<p>No data to display</p>
+	</body>
+</html>'''
+			return
 		self.html = '''<html>
 	<head>
 		<meta charset="utf-8"><title>IPFlower</title>
@@ -33,7 +41,7 @@ class NetVis:
 			function draw() {
 				nodes = [];
 				edges = [];'''
-		for node in stats.gen_nodes(maxnodes):
+		for node in self.stats.gen_nodes(maxnodes):
 			self.html += '''
 				nodes.push({'''
 			self.html += f'id: "{node["addr"]}", label: "{node["addr"]}", shape: "image", image: DIR + "{node["cc"]}.svg"'
@@ -45,11 +53,11 @@ class NetVis:
 					title: "<table><tr><td colspan='3'>{node["addr"]}</td></tr><tr><td colspan='3'>{node["geo"]}</td></tr>'''
 			try:
 				for key, value in node['title'].items():
-					self.html += f'<tr><td>{key}</td><td> : </td><td>{self.humanreadble(value)}</td></tr>'
+					self.html += f'<tr><td>{key}</td><td> : </td><td>{self.humanreadable(key, value)}</td></tr>'
 			except AttributeError:
 				pass
 			self.html += '</table>"});'
-		for edge in stats.gen_edges():
+		for edge in self.stats.gen_edges():
 			self.html += '''
 				edges.push({'''
 			self.html += f'id: "{edge["id"]}", from: "{edge["from"]}", to: "{edge["to"]}"'
@@ -65,7 +73,7 @@ class NetVis:
 				self.html += ''',
 					title: "<table>'''
 				for key, value in edge['title'].items():
-					self.html += f'<tr><td>{key}</td><td>:</td><td>{value}</td></tr>'
+					self.html += f'<tr><td>{key}</td><td>:</td><td>{self.humanreadable(key, value)}</td></tr>'
 				self.html += '</table>"'
 			except AttributeError:
 				pass

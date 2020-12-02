@@ -3,7 +3,6 @@
 
 from lib.zeekcut import ZeekCut
 from lib.basicstats import BasicStats
-from ipaddress import ip_address
 from operator import itemgetter
 
 class CalcZeek(BasicStats):
@@ -13,7 +12,7 @@ class CalcZeek(BasicStats):
 		'Read data from Zeek logfiles and calculate statistics'
 		self.addresses = 'id.orig_h', 'id.resp_h'
 		self.timestamps = 'first_ts', 'last_ts'
-		self.bytes = 'orig_bytes', 'resp_bytes'
+		self.bytes = 'orig_bytes', 'resp_bytes', 'total_bytes'
 		if grep == None:
 			self.columns = 'id.orig_h', 'id.resp_h', 'ts', 'orig_bytes', 'resp_bytes'
 			self.type = 'basic'
@@ -103,20 +102,21 @@ class CalcZeek(BasicStats):
 			edge['id'] = id_cnt
 			edge['value'] = line['total_bytes']
 			edge['arrows'] = 'to'
-			edge['title'] = {
-				'first_ts': line['first_ts'],
-				'last_ts': line['last_ts'],
-				'orig_bytes': line['orig_bytes'],
-				'resp_bytes': line['resp_bytes'],
-				'total_bytes': line['total_bytes']
-			}
+			if self.type == 'grep':
+				edge['title'] = {
+					'id.resp_p': line['id.resp_p'],
+					'first_ts': line['first_ts'],
+					'last_ts': line['last_ts'],
+					'orig_bytes': line['orig_bytes'],
+					'resp_bytes': line['resp_bytes'],
+					'total_bytes': line['total_bytes']
+				}
+			else:
+				edge['title'] = {
+					'first_ts': line['first_ts'],
+					'last_ts': line['last_ts'],
+					'orig_bytes': line['orig_bytes'],
+					'resp_bytes': line['resp_bytes'],
+					'total_bytes': line['total_bytes']
+				}
 			yield edge
-
-
-#			if self.type == 'grep':
-#				edge['title'] = f'id.resp_p: {line["id.resp_p"]}',
-#			self.edges.append(edge)			
-
-
-
-

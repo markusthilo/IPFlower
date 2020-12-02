@@ -12,8 +12,6 @@ class Grep():
 			self.addresses = []
 			return
 		self.addresses = [ ip_address(a) for a in arg.split('-') ]
-		if len(self.addresses) > len:
-			raise ValueError('Too many IP addresses to grep for.')
 
 	def grep(self, data):
 		'Generate filtered list'

@@ -22,17 +22,12 @@ class BasicStats:
 			bl = BlackList(blacklist)
 			self.data = bl.filter(self.addresses, grepper.grep(self.data))
 
-	def grep(self, grep):
+	def grep(self, arg):
 		'Grep fiter'
-		if grep != None:
-			if len(grep.addresses) > len(self.addresses):
-				raise RuntimeError('Too many IP addresses to filter for.')
-			grepper = Grep(grep)
-			self.data = grepper.grep(self.data)
-
-	def reverse(self):
-		'Reverse lines - should give from small to large traffic'
-		self.data = reversed(self.data)
+		grepper = Grep(arg)
+		if len(grepper.addresses) > len(self.addresses):
+			raise RuntimeError('Too many IP addresses to filter for.')
+		self.data = grepper.grep(self.data)
 
 	def limit_data(self, maxdata):
 		'Limit number of data sets'

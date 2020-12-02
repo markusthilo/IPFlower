@@ -3,9 +3,7 @@
 
 from lib.basicstats import BasicStats
 from lib.basicinout import CSVReader
-from lib.blacklist import BlackList
-from lib.grep import Grep
-from ipaddress import ip_address
+from operator import itemgetter
 
 class IPRunner(BasicStats, CSVReader):
 	'Visualize netflow data'
@@ -48,8 +46,10 @@ class IPRunner(BasicStats, CSVReader):
 		self.datatype = self.__type__(self.columns)
 		if self.datatype == 'shorter':
 			self.addresses = 'ADDR'
+			self.bytes = 'VOLUME_IN', 'VOLUME_OUT'
 		else:
 			self.addresses = 'SRC_ADDR', 'DST_ADDR'
+			self.bytes = 'VOLUME'
 		self.timestamps = 'FIRST_TS', 'LAST_TS'
 		self.grep(grep)
 		self.blacklist(blacklist)
@@ -61,6 +61,45 @@ class IPRunner(BasicStats, CSVReader):
 			if columns == coldefs:
 				return datatype
 		raise RuntimeError('Unexpected input file.')
+
+	def gen_nodes(self, maxnodes=None):
+		'Generate nodes to display'
+		if self.type == 'shorter':
+			return
+		self.addresses = { line['SRC_ADDR'] for line in self.data }	# all ip adressses
+		self.addresses.update({ line['DSST_ADDR'] for line in self.data })
+		self.nodes = []
+		for addr in self.addresses:	#	generate list of nodes
+			node = {'ADDR': addr.compressed}
+			first_ts = None
+			last_ts = None
+			total_bytes = 0
+			for line in self.data:
+				if addr == line['SRC_ADDR'] or addr == line ['DST_ADDR']:	# node is src or dst
+					if first_ts == None or line['FIRST_TS'] < first_ts:	# update timestamps
+						first_ts = line['FIRST_TS']
+					if last_ts == None or line['LAST_TS'] > last_ts:
+						last_ts = line['LAST_TS']
+					total_bytes += line['total_bytes']
+			node.update({'first_ts': first_ts, 'last_ts': last_ts, 'total_bytes': total_bytes})
+			self.nodes.append(node)
+		self.nodes.sort(key=itemgetter('total_bytes'), reverse=True)
+		self.limit_nodes(maxnodes)
+		self.addgeo2nodes()
+		self.addresses = set()
+		for node in self.nodes:
+			self.addresses.add(node['addr'])
+			node['value'] = node['total_bytes']
+			node['title'] = {
+				'first_ts': node['first_ts'],
+				'last_ts': node['last_ts'],
+				'total_bytes': node['total_bytes']
+			}
+			yield node
+
+
+
+
 
 	def gen_nodes(self, maxnodes=None):
 		'Generate nodes to display'
@@ -81,6 +120,41 @@ class IPRunner(BasicStats, CSVReader):
 					volume += line['VOLUME']
 			node.update({'FIRST_TS': first_ts, 'LAST_TS': last_ts, 'VOLUME': volume})
 			self.nodes.append(node)
+
+
+
+	def gen_edges(self):
+		'Generate edges to display'
+		id_cnt = 0	# for simple edge ids
+		for line in self.data:
+			edge = {'from': line['id.orig_h'].compressed, 'to': line['id.resp_h'].compressed}
+			if not edge['from'] in self.addresses or not edge['to'] in self.addresses:
+				continue
+			id_cnt += 1
+			edge['id'] = id_cnt
+			edge['value'] = line['total_bytes']
+			edge['arrows'] = 'to'
+			if self.type == 'grep':
+				edge['title'] = {
+					'id.resp_p': line['id.resp_p'],
+					'first_ts': line['first_ts'],
+					'last_ts': line['last_ts'],
+					'orig_bytes': line['orig_bytes'],
+					'resp_bytes': line['resp_bytes'],
+					'total_bytes': line['total_bytes']
+				}
+			else:
+				edge['title'] = {
+					'first_ts': line['first_ts'],
+					'last_ts': line['last_ts'],
+					'orig_bytes': line['orig_bytes'],
+					'resp_bytes': line['resp_bytes'],
+					'total_bytes': line['total_bytes']
+				}
+			yield edge
+
+
+
 
 	def gen_edges(self):
 		'Generate edges to display'

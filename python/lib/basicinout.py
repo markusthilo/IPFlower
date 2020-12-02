@@ -42,10 +42,9 @@ class CSVGenerator(BasicOutput):
 		self.stats = stats
 		self.headline = headline
 		self.dialect = dialect
+		self.reverse = reverse
 		self.delimiter = delimiter
-		self.stats.limit(maxout)
-		if reverse:
-			self.stats.reverse()
+		self.stats.limit_data(maxout)
 		if not unixtime:
 			for i in range(len(self.stats.data)):
 				for ts in self.stats.timestamps:
@@ -56,8 +55,12 @@ class CSVGenerator(BasicOutput):
 		csvwriter = writer(outfile, dialect=self.dialect, delimiter=self.delimiter)
 		if len(self.stats.data) > 0:
 			csvwriter.writerow(self.stats.data[0].keys())
-			for line in self.stats.data:
-				csvwriter.writerow(line.values())
+			if self.reverse:
+				for line in reversed(self.stats.data):
+					csvwriter.writerow(line.values())
+			else:
+				for line in self.stats.data:
+					csvwriter.writerow(line.values())
 		else:
 			csvwriter.writerow(['No data'])
 
