@@ -25,6 +25,7 @@ class CalcZeek(BasicStats):
 		self.data = zeekcut.data
 		self.grep(grep)	# filter data
 		self.blacklist(blacklist)
+		print(self.data)
 		newdata = []
 		for line in self.data:
 			orig_bytes = self.str2zero(line['orig_bytes'])
