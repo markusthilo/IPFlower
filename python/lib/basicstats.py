@@ -44,7 +44,7 @@ class BasicStats:
 		geo_db = GeoLite2()
 		for line in self.data:
 			for addr in self.addresses:
-				line[addr + extension ] = geo_db.get_string(line[addr])
+				line[addr + extension] = geo_db.get_string(line[addr])
 
 	def addgeo2nodes(self):
 		'Get country code in lower characters'
