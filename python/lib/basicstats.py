@@ -38,19 +38,3 @@ class BasicStats:
 		'Linit number of nodes'
 		if maxnodes != None and maxnodes < len(self.nodes):
 			self.nodes = self.nodes[:maxnodes]
-
-	def addgeo(self, extension='_geo'):
-		'Add geo infos'
-		geo_db = GeoLite2()
-		for line in self.data:
-			for addr in self.addresses:
-				line[addr + extension] = geo_db.get_string(line[addr])
-
-	def addgeo2nodes(self):
-		'Get country code in lower characters'
-		geo_db = GeoLite2()
-		for node in self.nodes:
-			geo = geo_db.get(node['addr'])
-			node['cc'] = geo['cc'].lower()
-			node['geo'] = geo_db.gen_string(geo)
-			
