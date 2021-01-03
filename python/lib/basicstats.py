@@ -53,4 +53,3 @@ class BasicStats:
 			geo = geo_db.get(node['addr'])
 			node['cc'] = geo['cc'].lower()
 			node['geo'] = geo_db.gen_string(geo)
-			

@@ -40,8 +40,9 @@ class IPRunner(BasicStats, CSVReader):
 		])
 	)
 
-	def __init__(self, infiles, grep=None, blacklist=None):
+	def __init__(self, infiles, config, grep=None, blacklist=None):
 		'Use iprunner to calculate statistics'
+		BasicStats.__init__(config)
 		self.readcsv(infiles)
 		self.datatype = self.__type__(self.columns)
 		if self.datatype == 'shorter':

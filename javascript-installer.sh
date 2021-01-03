@@ -1,5 +1,5 @@
 #!/bin/bash
 
-mkdir javascript
-cd javascript
+mkdir visjs
+cd visjs
 npm install vis-network

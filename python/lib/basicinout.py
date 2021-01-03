@@ -33,7 +33,7 @@ class CSVGenerator(BasicOutput):
 	'Generator for tabstop-separated values'
 
 	def __init__(self, stats,
-		headline = False,
+		headline = True,
 		dialect = 'excel',
 		delimiter = '\t',
 		maxout = None,
