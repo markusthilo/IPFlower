@@ -8,8 +8,10 @@ from lib.basicinout import BasicOutput
 class NetVis(BasicOutput):
 	'Generate html with JavaScript for network visualisation of the statistic netflow data'
 
-	def __init__(self, stats, maxnodes=1000):
+	def __init__(self, outfile, stats, maxnodes=1000):
 		'Base for isualisation using Vis.js'
+		super().__init__()
+		self.outfile = outfile
 		self.stats = stats
 		if len(self.stats.data) == 0:
 			self.html = '''<html>
@@ -41,41 +43,41 @@ class NetVis(BasicOutput):
 			function draw() {
 				nodes = [];
 				edges = [];'''
-		for node in self.stats.gen_nodes(maxnodes):
+		for node in self.stats.gen_nodes(maxnodes):	# nodes for vis.js
 			self.html += '''
 				nodes.push({'''
-			self.html += f'id: "{node["addr"]}", label: "{node["addr"]}", shape: "image", image: DIR + "{node["cc"]}.svg"'
+			geoinfo = self.geolite2.get(node['addr'])
+			cc = geoinfo['cc'].lower()
+			geostr = self.geostring(geoinfo)
+			self.html += f'id: "{node["addr"]}", label: "{node["addr"]}", shape: "image", image: DIR + "{cc}.svg"'
 			try:
 				self.html += f', value: {node["value"]}'
-			except AttributeError:
+			except KeyError:
 				pass
 			self.html += f''',
-					title: "<table><tr><td colspan='3'>{node["addr"]}</td></tr><tr><td colspan='3'>{node["geo"]}</td></tr>'''
+					title: "<table><tr><td colspan='3'>{node["addr"]}</td></tr><tr><td colspan='3'>{geostr}</td></tr>'''
 			try:
-				for key, value in node['title'].items():
-					self.html += f'<tr><td>{key}</td><td> : </td><td>{self.humanreadable(key, value)}</td></tr>'
-			except AttributeError:
+				self.html += self.titlerows(node['title'])
+			except KeyError:
 				pass
 			self.html += '</table>"});'
-		for edge in self.stats.gen_edges():
+		for edge in self.stats.gen_edges():	# edges for vis.js
 			self.html += '''
 				edges.push({'''
 			self.html += f'id: "{edge["id"]}", from: "{edge["from"]}", to: "{edge["to"]}"'
 			try:
 				self.html += f', value: {edge["value"]}'
-			except AttributeError:
+			except KeyError:
 				pass
 			try:
 				self.html += f', arrows: "{edge["arrows"]}"'
-			except AttributeError:
+			except KeyError:
 				pass
 			try:
-				self.html += ''',
-					title: "<table>'''
-				for key, value in edge['title'].items():
-					self.html += f'<tr><td>{key}</td><td>:</td><td>{self.humanreadable(key, value)}</td></tr>'
-				self.html += '</table>"'
-			except AttributeError:
+				
+				self.html += f''',
+					title: "<table>{self.titlerows(edge['title'])}</table>"'''
+			except KeyError:
 				pass
 			self.html += '});'
 		self.html += '''
@@ -102,6 +104,17 @@ class NetVis(BasicOutput):
 	</body>
 </html>'''
 
-	def write(self, outfile):
+	def titlerows(self, title):
+		'Make bytes and timestamps readable'
+		html = ''
+		for key, value in title.items():
+			if key in self.stats.bytes:
+				value = self.humanbytes(value)
+			elif key in self.stats.timestamps:
+				value = self.humantime(value)
+			html += f'<tr><td>{key}</td><td> : </td><td>{value}</td></tr>'
+		return html
+
+	def write(self):
 		'Write html'
-		print(self.html, file=outfile)
+		print(self.html, file=self.outfile)

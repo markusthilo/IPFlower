@@ -4,9 +4,14 @@
 from datetime import datetime
 from csv import reader, writer
 from ipaddress import ip_address
+from lib.geolite2 import GeoLite2
 
 class BasicOutput:
 	'Base for output classes'
+
+	def __init__(self):
+		'Create Objekt by defining geo database'
+		self.geolite2 = GeoLite2()
 
 	def humantime(self, ts):
 		'Create full readable timestamp as string'
@@ -15,54 +20,86 @@ class BasicOutput:
 	def humanbytes(self, value):
 		'Create full readable bytes'
 		index = 0
-		while value >= 10000:
+		while value > 1000 and index < 5:
 			value /= 1000
 			index += 1
 		return f'{value} {("B", "KB", "MB", "GB", "TB", "PB")[index]}'
 
-	def humanreadable(self, key, value):
-		'Create full readable timestamp as string if key is in timestamps'
-		if key in self.stats.timestamps:
-			return self.humantime(value)
-		elif key in self.stats.bytes:
-			return self.humanbytes(value)
-		else:
-			return value
+	def chng_humantime(self, line):
+		'Change UNIX timestamps to human readable'
+		for key in self.stats.timestamps:
+			line[key] = self.humantime(line[key])
+		return line
+
+	def chng_humanbytes(self, line):
+		'Change traffic volumes to human readable'
+		for key in self.stats.bytes:
+			line[key] = self.humanbytes(line[key])
+		return line
+
+	def geostring(self, geo):
+		'Add geo locations'
+		geostr = ''
+		for val in geo.values():
+			if val != '-':
+				geostr += str(val) + ', '
+		if geostr == '':
+			geostr = '-'
+		return geostr[:-2]
+
+	def add_geostring(self, line):
+		'Add geo locations'
+		for key in self.stats.addresses:
+			line[key + self.stats.geoextension] = self.geostring(self.geolite2.get(line[key]))
+		return line
 
 class CSVGenerator(BasicOutput):
 	'Generator for tabstop-separated values'
 
+<<<<<<< HEAD
 	def __init__(self, stats,
 		headline = True,
+=======
+	def __init__(self, outfile, stats,
+		noheadline = False,
+>>>>>>> c667a23a58649419aa394e887dfdf74f7c12f39c
 		dialect = 'excel',
 		delimiter = '\t',
 		maxout = None,
 		reverse = False,
-		unixtime = False):
+		unixtime = False,
+		humanreadable = False):
+		super().__init__()
 		self.stats = stats
-		self.headline = headline
-		self.dialect = dialect
+		self.noheadline = noheadline
 		self.reverse = reverse
-		self.delimiter = delimiter
+		self.unixtime = unixtime
+		self.humanreadable = humanreadable
 		self.stats.limit_data(maxout)
-		if not unixtime:
-			for i in range(len(self.stats.data)):
-				for ts in self.stats.timestamps:
-					self.stats.data[i][ts] = self.humantime(self.stats.data[i][ts])
+		self.csvwriter = writer(outfile, dialect=dialect, delimiter=delimiter)
 
-	def write(self, outfile):
+	def write(self):
 		'Write to file or stdout'
-		csvwriter = writer(outfile, dialect=self.dialect, delimiter=self.delimiter)
 		if len(self.stats.data) > 0:
-			csvwriter.writerow(self.stats.data[0].keys())
+			if not self.noheadline:
+				self.csvwriter.writerow(self.stats.data[0].keys())
 			if self.reverse:
 				for line in reversed(self.stats.data):
-					csvwriter.writerow(line.values())
+					self.__writerow__(line)
 			else:
 				for line in self.stats.data:
-					csvwriter.writerow(line.values())
+					self.__writerow__(line)
 		else:
-			csvwriter.writerow(['No data'])
+			self.csvwriter.writerow(['No data'])
+
+	def __writerow__(self, line):
+		'Write one row to CSV file'
+		if not self.unixtime:
+			line = self.chng_humantime(line)
+		if self.humanreadable:
+			line = self.chng_humanbytes(line)
+		line = self.add_geostring(line)
+		self.csvwriter.writerow(line.values())
 
 class CSVReader:
 	'Read CSV files'

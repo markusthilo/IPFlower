@@ -55,17 +55,3 @@ class GeoLite2:
 					data['aso'] = '-'
 					data['asn'] = '-'
 		return data
-
-	def gen_string(self, geo):
-		'Generate string with geo infos'
-		outstr = ''
-		for val in geo.values():
-			if val != '-':
-				outstr += str(val) + ', '
-		if outstr == '':
-			return '-'
-		return outstr[:-2]
-
-	def get_string(self, addr):
-		'Get infos to given IP address and assemble as one string'
-		return self.gen_string(self.get(addr))

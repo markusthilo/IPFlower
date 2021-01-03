@@ -38,6 +38,7 @@ class BasicStats:
 		'Linit number of nodes'
 		if maxnodes != None and maxnodes < len(self.nodes):
 			self.nodes = self.nodes[:maxnodes]
+<<<<<<< HEAD
 
 	def addgeo(self, extension='_geo'):
 		'Add geo infos'
@@ -53,3 +54,5 @@ class BasicStats:
 			geo = geo_db.get(node['addr'])
 			node['cc'] = geo['cc'].lower()
 			node['geo'] = geo_db.gen_string(geo)
+=======
+>>>>>>> c667a23a58649419aa394e887dfdf74f7c12f39c
