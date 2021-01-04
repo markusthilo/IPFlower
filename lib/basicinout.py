@@ -9,9 +9,10 @@ from lib.geolite2 import GeoLite2
 class BasicOutput:
 	'Base for output classes'
 
-	def __init__(self):
+	def __init__(self, config):
 		'Create Objekt by defining geo database'
-		self.geolite2 = GeoLite2()
+		self.geolite2 = GeoLite2(config)
+		self.config = config
 
 	def humantime(self, ts):
 		'Create full readable timestamp as string'
@@ -56,25 +57,20 @@ class BasicOutput:
 class CSVGenerator(BasicOutput):
 	'Generator for tabstop-separated values'
 
-<<<<<<< HEAD
-	def __init__(self, stats,
-		headline = True,
-=======
-	def __init__(self, outfile, stats,
+	def __init__(self, outfile, stats, config,
 		noheadline = False,
->>>>>>> c667a23a58649419aa394e887dfdf74f7c12f39c
 		dialect = 'excel',
 		delimiter = '\t',
 		maxout = None,
 		reverse = False,
 		unixtime = False,
-		humanreadable = False):
-		super().__init__()
+		intbytes = False):
+		super().__init__(config)
 		self.stats = stats
 		self.noheadline = noheadline
 		self.reverse = reverse
 		self.unixtime = unixtime
-		self.humanreadable = humanreadable
+		self.intbytes = intbytes
 		self.stats.limit_data(maxout)
 		self.csvwriter = writer(outfile, dialect=dialect, delimiter=delimiter)
 
@@ -96,7 +92,7 @@ class CSVGenerator(BasicOutput):
 		'Write one row to CSV file'
 		if not self.unixtime:
 			line = self.chng_humantime(line)
-		if self.humanreadable:
+		if not self.intbytes:
 			line = self.chng_humanbytes(line)
 		line = self.add_geostring(line)
 		self.csvwriter.writerow(line.values())

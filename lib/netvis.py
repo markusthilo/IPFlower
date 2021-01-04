@@ -8,9 +8,9 @@ from lib.basicinout import BasicOutput
 class NetVis(BasicOutput):
 	'Generate html with JavaScript for network visualisation of the statistic netflow data'
 
-	def __init__(self, outfile, stats, maxnodes=1000):
+	def __init__(self, outfile, stats, config, maxnodes=1000):
 		'Base for isualisation using Vis.js'
-		super().__init__()
+		super().__init__(config)
 		self.outfile = outfile
 		self.stats = stats
 		if len(self.stats.data) == 0:
@@ -31,8 +31,8 @@ class NetVis(BasicOutput):
 			td {white-space: nowrap}
 			input[type=text] {width: 100%; box-sizing: border-box}
 		</style>
-		<link href="./javascript/node_modules/vis-network/dist/dist/vis-network.min.css" rel="stylesheet" type="text/css" />
-		<script type="text/javascript" src="./javascript/node_modules/vis-network/dist/vis-network.js"></script>
+		<link href="./visjs/node_modules/vis-network/dist/dist/vis-network.min.css" rel="stylesheet" type="text/css" />
+		<script type="text/javascript" src="./visjs/node_modules/vis-network/dist/vis-network.js"></script>
 		<script type="text/javascript">
 			var nodes = null;
 			var edges = null;

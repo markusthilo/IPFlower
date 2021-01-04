@@ -8,16 +8,10 @@ from operator import itemgetter
 class Zeek(BasicStats):
 	'Visualize netflow data'
 
-<<<<<<< HEAD
-	def __init__(self, infiles, config, grep=None, blacklist=None):
-		'Read data from Zeek logfiles and calculate statistics'
-		BasicStats.__init__(config)
-=======
 	def __init__(self, infiles, ports=False, grep=None, blacklist=None):
 		'Read data from Zeek logfiles and calculate statistics'
 		self.ports = ports
 		self.vis_available = not ports
->>>>>>> c667a23a58649419aa394e887dfdf74f7c12f39c
 		self.addresses = 'id.orig_h', 'id.resp_h'
 		self.timestamps = 'first_ts', 'last_ts'
 		self.bytes = 'orig_bytes', 'resp_bytes', 'total_bytes'

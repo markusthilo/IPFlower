@@ -10,15 +10,14 @@ from ipaddress import IPv4Address, IPv6Address, ip_address
 class GeoLite2:
 	'Class to use MaxMind GeoLite2 databases City and ASN'
 
-	def __init__(self):
-		'Create address from given string'
-		self.dir = path.join(path.dirname(path.realpath(__file__)).rsplit('/', 2)[0], 'geolite2')	# root dir is 2 levels up from this script
+	def __init__(self, config):
+		'Open local GeoLite2 databases asn and country'
 		try:	# try to open databases
-			self.asn = open_database(path.join(self.dir, 'GeoLite2-ASN.mmdb'))
+			self.asn = open_database(config['geolite2']['asn'])
 		except:
 			self.asn = None
 		try:
-			self.country = open_database(path.join(self.dir, 'GeoLite2-Country.mmdb'))
+			self.country = open_database(config['geolite2']['country'])
 		except:
 			self.country = None
 
