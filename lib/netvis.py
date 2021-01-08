@@ -8,10 +8,9 @@ from lib.basicinout import BasicOutput
 class NetVis(BasicOutput):
 	'Generate html with JavaScript for network visualisation of the statistic netflow data'
 
-	def __init__(self, outfile, stats, config, maxnodes=1000):
+	def __init__(self, stats, config, maxnodes=1000):
 		'Base for isualisation using Vis.js'
 		super().__init__(config)
-		self.outfile = outfile
 		self.stats = stats
 		if len(self.stats.data) == 0:
 			self.html = '''<html>
@@ -115,6 +114,6 @@ class NetVis(BasicOutput):
 			html += f'<tr><td>{key}</td><td> : </td><td>{value}</td></tr>'
 		return html
 
-	def write(self):
+	def write(self, outfile):
 		'Write html'
-		print(self.html, file=self.outfile)
+		print(self.html, file=outfile)

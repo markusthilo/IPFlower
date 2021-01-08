@@ -28,7 +28,7 @@ if __name__ == '__main__':	# start here if called as application
 		help='Cofiguration File', metavar='FILE'
 	)
 	argparser.add_argument('-d', '--outdir', type=str,
-		help='Directory to write HTML', metavar='DIRECTORY'
+		help='Directory to write HTML and vis.js node-modules', metavar='DIRECTORY'
 	)
 	argparser.add_argument('-g', '--grep',	type=str,
 		help='Target IP address', metavar='IP_ADDRESS/LINK',
@@ -51,7 +51,7 @@ if __name__ == '__main__':	# start here if called as application
 	argparser.add_argument('-v', '--vis', action='store_true',
 		help='Generate HTML/JavaScript for VISJS (default is TSV output)'
 	)
-	argparser.add_argument('-w', '--outfile', type=FileType('w'), default=StdOut,
+	argparser.add_argument('-w', '--outfile', type=FileType('w'),
 		help='File to write', metavar='FILE'
 	)
 	argparser.add_argument('-y', '--bytes', action='store_true',
@@ -137,11 +137,16 @@ Types of input file(s):
 		if not stats.vis_available:
 			print('Error: Visualisation is not available.', file=StdErr)
 			SysExit(1)
-		netvis = NetVis(args.outfile, stats, config, maxnodes=args.max)
-		netvis.write()
+		netvis = NetVis(stats, config, maxnodes=args.max)
+		if args.outdir != None:
+			netvis
+		netvis.write(args.outfile)
 	else:	# csv/tsv
+		if args.outfile = None:
+			outfile = StdOut
+		else:
+			outfile = args.outfile
 		csv = CSVGenerator(
-			args.outfile,
 			stats,
 			config,
 			noheadline=args.noheadline,
@@ -150,6 +155,6 @@ Types of input file(s):
 			unixtime=args.unixtime,
 			intbytes=args.bytes
 		)
-		csv.write()
+		csv.write(outfile)
 	SysExit(0)
 

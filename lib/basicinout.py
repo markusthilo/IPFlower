@@ -57,7 +57,7 @@ class BasicOutput:
 class CSVGenerator(BasicOutput):
 	'Generator for tabstop-separated values'
 
-	def __init__(self, outfile, stats, config,
+	def __init__(self, stats, config,
 		noheadline = False,
 		dialect = 'excel',
 		delimiter = '\t',
@@ -72,10 +72,10 @@ class CSVGenerator(BasicOutput):
 		self.unixtime = unixtime
 		self.intbytes = intbytes
 		self.stats.limit_data(maxout)
-		self.csvwriter = writer(outfile, dialect=dialect, delimiter=delimiter)
 
-	def write(self):
+	def write(self, outfile):
 		'Write to file or stdout'
+		self.csvwriter = writer(outfile, dialect=dialect, delimiter=delimiter)
 		if len(self.stats.data) > 0:
 			if not self.noheadline:
 				self.csvwriter.writerow(self.stats.data[0].keys())
