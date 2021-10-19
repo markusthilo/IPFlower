@@ -67,6 +67,8 @@ class CSVGenerator(BasicOutput):
 		intbytes = False):
 		super().__init__(config)
 		self.stats = stats
+		self.dialect = dialect
+		self.delimiter = delimiter
 		self.noheadline = noheadline
 		self.reverse = reverse
 		self.unixtime = unixtime
@@ -75,7 +77,7 @@ class CSVGenerator(BasicOutput):
 
 	def write(self, outfile):
 		'Write to file or stdout'
-		self.csvwriter = writer(outfile, dialect=dialect, delimiter=delimiter)
+		self.csvwriter = writer(outfile, dialect=self.dialect, delimiter=self.delimiter)
 		if len(self.stats.data) > 0:
 			if not self.noheadline:
 				self.csvwriter.writerow(self.stats.data[0].keys())

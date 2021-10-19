@@ -18,8 +18,9 @@ from configparser import ConfigParser
 from pathlib import Path
 
 if __name__ == '__main__':	# start here if called as application
+	basedir = path.dirname(path.abspath(__file__))
 	homeconf = path.join(path.expanduser('~'), '.config', 'ipflower.conf')	#  ~/.config/ipflower.conf
-	mainconf = path.join(path.dirname(path.abspath(__file__)), 'ipflower.conf')	# IPFlower/ipflower.conf
+	basedirconf = path.join(basedir, 'ipflower.conf')	# IPFlower/ipflower.conf
 	argparser = ArgumentParser(description='Analize netflow data')
 	argparser.add_argument('-b', '--blacklist', nargs=1, type=FileType('rt'),
 		help='File with blacklisted = suppressed IP addresses', metavar='FILE'
@@ -58,13 +59,13 @@ if __name__ == '__main__':	# start here if called as application
 		help='Data volume in bytes (no B, KB, MB etc.) on CSV output'
 	)
 	argparser.add_argument('infiles', nargs='*', type=FileType('rt'),
-		help='File(s) to read, at least one is required', metavar='FILE'
+		help='File(s) to read, at least one is required - use -h or --help for infos', metavar='FILE'
 	)
 	args = argparser.parse_args()
 	config = ConfigParser()	# generate configuration object
 	configfile = None
 	if args.config == None:
-		for filename in (homeconf, mainconf):
+		for filename in (homeconf, basedirconf):
 			if path.exists(filename):
 				configfile = filename
 				break
@@ -73,14 +74,16 @@ if __name__ == '__main__':	# start here if called as application
 	else:
 		print('Error: Could not read configuration file.', file=StdErr)
 		SysExit(1)
+	print('DEBUG', configfile)
 	if configfile == None:	# if no configfile, generate config
+		print('DEBUG', config)
 		config['geolite2'] = {
-			'country': path.join(path.abspath(__file__), 'geolite2', 'GeoLite2-Country.mmdb'),
-			'asn': path.join(path.abspath(__file__),'geolite2', 'GeoLite2-ASN.mmdb')
+			'country': path.join(basedir, 'geolite2', 'GeoLite2-Country.mmdb'),
+			'asn': path.join(basedir,'geolite2', 'GeoLite2-ASN.mmdb')
 		}
-		config['visjs'] = {'basedir': path.join(path.abspath(__file__), 'visjs')}
-		config['pixmaps'] = {'basedir': path.join(path.abspath(__file__),'pixmaps')}
-		for filename in (homeconf, mainconf):	# write config file
+		config['visjs'] = {'dir': path.join(basedir, 'visjs')}
+		config['pixmaps'] = {'dir': path.join(basedir,'pixmaps')}
+		for filename in (homeconf, basedirconf):	# write config file
 			try:
 				with open(filename, 'w') as f:
 					config.write(f)
@@ -89,15 +92,12 @@ if __name__ == '__main__':	# start here if called as application
 				pass
 	else:
 		config.read(configfile)
-	if args.datatype == None:
-		argparser.print_help(StdErr)
-		SysExit(1)
-	if args.datatype.lower() in ('l', 'list', 'help'):
+	if args.datatype != None and args.datatype.lower() in ('l', 'list', 'help'):
 		print('''
 Types of input file(s):
 
 	z / zeek / zeek_no_ports:
-		Display conn.log from ZEEK ignoring ports.
+		Display conn.log from ZEEK ignoring ports (default).
 
 	zp / zeek_ports:
 		Display conn.log from ZEEK, differentiate by server ports (id.resp_p).
@@ -111,7 +111,7 @@ Types of input file(s):
 	if args.infiles == []:
 		print('Error: At least one input file is required.', file=StdErr)
 		SysExit(1)
-	if args.datatype.lower() in ('z', 'zeek', 'zeek_no_ports'):
+	if args.datatype == None or args.datatype.lower() in ('z', 'zeek', 'zeek_no_ports'):
 		stats = Zeek(
 			args.infiles,
 			grep=args.grep,
@@ -142,7 +142,7 @@ Types of input file(s):
 			netvis
 		netvis.write(args.outfile)
 	else:	# csv/tsv
-		if args.outfile = None:
+		if args.outfile == None:
 			outfile = StdOut
 		else:
 			outfile = args.outfile
