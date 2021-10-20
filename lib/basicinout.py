@@ -102,25 +102,32 @@ class CSVGenerator(BasicOutput):
 class CSVReader:
 	'Read CSV files'
 
-	def readcsv(self, infiles, delimiter='\t', dialect = 'excel', columns=None):
+	def __init__(self, infiles, delimiter='\t', dialect='unix', columns=None):
 		'Read data from CSV file'
 		self.data = []
 		self.columns = None
-		for infile in infiles:
+		if dialect == 'zeek':	# read zeek logfile
+			for infile in infiles:
+				csvreader = reader(infile, delimiter='\t', dialect='unix')
+				for line in csvreader:
+					if line[0] == '#fields':
+						if self.columns == None:
+							self.columns = line[1:]
+							continue
+						elif self.columns != line[1:]:
+							raise RuntimeError('Inconsistent Zeek logfile(s) / input files.')
+					if line[0][0] != '#':
+						self.data.append(self.__genline__(self.columns, line))
+			return
+		for infile in infiles:	# read other csv/tsv
 			csvreader = reader(infile, delimiter=delimiter, dialect = dialect)
-			csvlist = [ line for line in csvreader ]
 			if columns == None:
-				if self.columns == None:
-					self.columns = csvlist[0]
-				elif self.columns != csvlist[0]:
+				firstline = next(csvreader)
+				if self.columns != None and self.columns != firstline:
 					raise RuntimeError('Inconsistent input files.')
-				for line in csvlist[1:]:
-					self.data.append(self.__genline__(self.columns, line))
-			else:
-				for line in csvlist:
-					self.data.append(self.__genline__(columns, line))
-		if columns != None:
-			self.columns = columns
+				self.columns = firstline
+			for line in csvreader:
+				self.data.append(self.__genline__(self.columns, line))
 
 	def __decode__(self, string):
 		'Decode string'

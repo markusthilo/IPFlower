@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from lib.zeekcut import ZeekCut
 from lib.basicstats import BasicStats
+from lib.basicinout import CSVReader
 from operator import itemgetter
 
 class Zeek(BasicStats):
@@ -20,18 +20,12 @@ class Zeek(BasicStats):
 		else:
 			self.columns = 'id.orig_h', 'id.resp_h', 'ts', 'orig_bytes', 'resp_bytes'
 		self.geoextension = '_geo'
-		zeekcut = ZeekCut()
-		zeekcut.run(infiles, columns=self.columns)	# use zeek-cut
-		zeekcut.convert()	# convert strings to fitting types
-		self.data = zeekcut.data
+		self.data = CSVReader(infiles, dialect='zeek').data	# read logfile
 		self.grep(grep)	# filter data
 		self.blacklist(blacklist)
-		newdata = []
-		for line in self.data:
-			orig_bytes = self.str2zero(line['orig_bytes'])
-			resp_bytes = self.str2zero(line['resp_bytes'])
-			must_create = True
-			for newline in newdata:
+		data = []
+		def __update__(line, data):	# check for item and update if existing
+			for newline in data:
 				if ( line['id.orig_h'] == newline['id.orig_h']
 					and line['id.resp_h'] == newline['id.resp_h'] ):
 					if self.ports and line['id.resp_p'] != newline['id.resp_p']:
@@ -40,20 +34,21 @@ class Zeek(BasicStats):
 						newline['first_ts'] = line['ts']
 					elif line['ts'] > newline['last_ts']:	# update last seen
 						newline['last_ts'] = line['ts']
-					newline['orig_bytes'] += orig_bytes
-					newline['resp_bytes'] += resp_bytes
-					must_create = False
-					break
-			if must_create:
+					newline['orig_bytes'] += self.str2zero(line['orig_bytes'])
+					newline['resp_bytes'] += self.str2zero(line['resp_bytes'])
+					return True
+			return False
+		for line in self.data:	# loop through log data
+			if not __update__(line, data):	# check if item exists, create if not existing
 				newline = {'id.orig_h': line['id.orig_h'], 'id.resp_h': line['id.resp_h']}
 				if self.ports:
 					newline['id.resp_p'] = line['id.resp_p']
 				newline['first_ts'] = line['ts']
 				newline['last_ts'] = line['ts']
-				newline['orig_bytes'] = orig_bytes
-				newline['resp_bytes'] = resp_bytes
-				newdata.append(newline)
-		self.data = newdata
+				newline['orig_bytes'] = self.str2zero(line['orig_bytes'])
+				newline['resp_bytes'] = self.str2zero(line['resp_bytes'])
+				data.append(newline)
+		self.data = data
 		for line in self.data:
 			line['total_bytes'] = line['orig_bytes'] + line['resp_bytes']
 		self.data.sort(key=itemgetter('total_bytes'), reverse=True)
